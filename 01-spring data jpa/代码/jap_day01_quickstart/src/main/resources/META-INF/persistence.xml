@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="2.0">
+    <!--persistence-unit：持久化单元：
+        * name=""：持久化单元的名称，唯一值，用在JPA的调用
+        * transaction-type=""，表示事务的类型
+                * RESOURCE_LOCAL：单机版开发，指定本地资源的事务处理
+                * JTA：分布式事务处理（跨事务开发）
+
+        * provider：供应商，JPA操作数据库需要指定实现JPA的框架提供的供应商（hibenrate就是所谓的供应商）
+        * properties：JPA开发的相关属性
+                * 连接数据库（4个）
+                * 应用hibernate的相关配置
+                   * hibernate.show_sql：表示在控制台可以看到hibenrate底层组织的sql语句
+                   * hibernate.hbm2ddl.auto：是否可以通过映射的配置来生成数据库的表和字段
+                                    * update：如果当数据库表不存在的时候，可以创建数据库表
+                                    * none：表示如果表不存在，不能创建数据库的表；如果表存在，可以使用该表操作数据库（开发时，配置update）
+                                    * create：表示如果表不存在，创建表；如果表存在，先删除表，再创建表，操作数据（测试环境使用）
+    -->
+    <persistence-unit name="customerJpa" transaction-type="RESOURCE_LOCAL">
+        <provider>
+            org.hibernate.jpa.HibernatePersistenceProvider
+        </provider>
+        <properties>
+            <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"></property>
+            <property name="javax.persistence.jdbc.url" value="jdbc:mysql:///pinyougou"></property>
+            <property name="javax.persistence.jdbc.user" value="root"></property>
+            <property name="javax.persistence.jdbc.password" value="123"></property>
+
+            <property name="hibernate.show_sql" value="true"></property>
+            <property name="hibernate.hbm2ddl.auto" value="update"></property>
+        </properties>
+    </persistence-unit>
+</persistence>

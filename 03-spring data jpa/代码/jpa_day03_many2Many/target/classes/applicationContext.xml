@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa" xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                          http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+                          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                          http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+                          http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+                          http://www.springframework.org/schema/data/jpa
+                          http://www.springframework.org/schema/data/jpa/spring-jpa.xsd">
+    <!--1：创建c3p0数据源-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+        <property name="jdbcUrl" value="jdbc:mysql:///itheimaspringdatajpa"></property>
+        <property name="user" value="root"></property>
+        <property name="password" value="root"></property>
+    </bean>
+    <!--2：定义entityManagerFactoryBean，这是spring data jpa操作数据的核心，主要的配置-->
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <!--注入数据源-->
+        <property name="dataSource" ref="dataSource"></property>
+        <!--指定实体（JPA注解添加实体类和实体类属性上）-->
+        <property name="packagesToScan" value="com.itheima.domain"></property>
+        <!--指定实现JPA持久化的供应商-->
+        <property name="persistenceProvider">
+            <bean class="org.hibernate.jpa.HibernatePersistenceProvider"></bean>
+        </property>
+        <!--指定jpa供应商的适配器，适配器里使用hibernate的相关配置
+            * database：指定数据库
+            * databasePlatform：指定数据库的操作方言，方言的作用就是为了识别不同数据库的查询功能（例如：mysql的分页和oracle的分页）
+            * generateDdl：如果设置为true，可以通过实体中配置的映射关系，如果表不存在，自动创建数据库的表
+            * showSql：在开发过程中设置true，这样在控制台就可以显示hibenrate底层生成的sql语句
+        -->
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+                <property name="database" value="MYSQL"></property>
+                <property name="databasePlatform" value="org.hibernate.dialect.MySQLDialect"></property>
+                <property name="generateDdl" value="false"></property>
+                <property name="showSql" value="true"></property>
+            </bean>
+        </property>
+        <!--update：如果表不存在，创建表;如果表存在，直接使用表-->
+        <property name="jpaProperties">
+            <props>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+            </props>
+        </property>
+        <!--配置jpa的方言&#45;&#45;就是hibernate Jpa的方言-->
+        <property name="jpaDialect">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"></bean>
+        </property>
+    </bean>
+
+    <!--3：定义一个Dao的仓库，扫描实现Repository接口Dao接口-->
+    <jpa:repositories base-package="com.itheima.dao"
+                      entity-manager-factory-ref="entityManagerFactory"
+                        transaction-manager-ref="transactionManager"></jpa:repositories>
+
+    <!--4：配置事务-->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <tx:advice id="myAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="save*" read-only="false" propagation="REQUIRED"/>
+            <tx:method name="update*" read-only="false" propagation="REQUIRED"/>
+            <tx:method name="delete*" read-only="false" propagation="REQUIRED"/>
+            <tx:method name="*" read-only="true"></tx:method>
+        </tx:attributes>
+    </tx:advice>
+
+    <!--在Service层的类的方法作为切入点-->
+    <aop:config>
+        <aop:pointcut id="myPointcut" expression="execution(* com.itheima.service..*.*(..))"></aop:pointcut>
+        <aop:advisor advice-ref="myAdvice" pointcut-ref="myPointcut"></aop:advisor>
+    </aop:config>
+
+    <!--定义组件的扫描，方便我们创建Dao、Serivce、Controller-->
+    <context:component-scan base-package="com.itheima"></context:component-scan>
+</beans>
